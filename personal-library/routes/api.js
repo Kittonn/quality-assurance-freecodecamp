@@ -13,8 +13,12 @@ module.exports = function (app) {
   app
     .route("/api/books")
     .get(async (req, res) => {
-      const books = await Book.find();
-      return res.status(200).json(books);
+      try {
+        const books = await Book.find();
+        return res.status(200).json(books);
+      } catch (error) {
+        console.log(error);
+      }
       //response will be array of book objects
       //json res format: [{"_id": bookid, "title": book_title, "commentcount": num_of_comments },...]
     })
@@ -23,12 +27,9 @@ module.exports = function (app) {
       try {
         const { title } = req.body;
         if (!title) {
-          return res.status(404).send("missing required field title");
+          return res.status(200).send("missing required field title");
         }
-        const book = await Book.findOne({ title });
-        if (book) {
-          return res.status(400).json({ message: "book already exists" });
-        }
+
         const new_book = await Book.create({ title });
         return res.status(201).json({
           _id: new_book._id,
@@ -41,25 +42,64 @@ module.exports = function (app) {
       //response will contain new book object including atleast _id and title
     })
 
-    .delete(function (req, res) {
-      //if successful response will be 'complete delete successful'
+    .delete(async (req, res) => {
+      try {
+        const books = await Book.deleteMany({});
+        return res.status(200).send("complete delete successful");
+      } catch (error) {
+        console.log(error);
+      }
     });
 
   app
     .route("/api/books/:id")
-    .get(function (req, res) {
-      let bookid = req.params.id;
+    .get(async (req, res) => {
+      try {
+        let { id } = req.params;
+        const book = await Book.findOne({ _id: id });
+        if (!book) {
+          return res.status(200).send("no book exists");
+        }
+        return res.status(200).json(book);
+      } catch (error) {
+        console.log(error);
+      }
       //json res format: {"_id": bookid, "title": book_title, "comments": [comment,comment,...]}
     })
 
-    .post(function (req, res) {
-      let bookid = req.params.id;
-      let comment = req.body.comment;
+    .post(async (req, res) => {
+      try {
+        let { id } = req.params;
+        let { comment } = req.body;
+        const book = await Book.findOneAndUpdate(
+          { _id: id },
+          { $push: { comments: comment } }
+        );
+        if (!book) {
+          return res.status(200).send("no book exists");
+        }
+        if (!comment) {
+          return res.status(200).send("missing required field comment");
+        }
+        const updateBook = await Book.findOne({ _id: id });
+        return res.status(200).json(updateBook);
+      } catch (error) {
+        console.log(error);
+      }
       //json res format same as .get
     })
 
-    .delete(function (req, res) {
-      let bookid = req.params.id;
+    .delete(async (req, res) => {
+      try {
+        let { id } = req.params;
+        const book = await Book.findOneAndDelete({ _id: id });
+        if (!book) {
+          return res.status(200).send("no book exists");
+        }
+        return res.status(200).send("delete successful");
+      } catch (error) {
+        console.log(error);
+      }
       //if successful response will be 'delete successful'
     });
 };
