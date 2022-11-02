@@ -71,9 +71,11 @@ module.exports = function (app) {
       try {
         let { id } = req.params;
         let { comment } = req.body;
-        const book = await Book.findOneAndUpdate(
+        let book = await Book.findOneAndUpdate(
           { _id: id },
-          { $push: { comments: comment } }
+          { $push: { comments: comment } },{
+            new: true
+          }
         );
         if (!book) {
           return res.status(200).send("no book exists");
@@ -81,8 +83,8 @@ module.exports = function (app) {
         if (!comment) {
           return res.status(200).send("missing required field comment");
         }
-        const updateBook = await Book.findOne({ _id: id });
-        return res.status(200).json(updateBook);
+        // const updateBook = await Book.findOne({ _id: id });
+        return res.status(200).json(book);
       } catch (error) {
         console.log(error);
       }
