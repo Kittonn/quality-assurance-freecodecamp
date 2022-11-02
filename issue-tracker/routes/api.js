@@ -7,11 +7,15 @@ module.exports = function (app) {
     .route("/api/issues/:project")
 
     .get(async (req, res) => {
-      const { project } = req.params;
-      req.query.project = project;
-      const issues = await Issue.find({ ...req.query });
+      try {
+        const { project } = req.params;
+        req.query.project = project;
+        const issues = await Issue.find({ ...req.query });
 
-      return res.status(200).json(issues);
+        return res.status(200).json(issues);
+      } catch (error) {
+        console.log(error);
+      }
     })
 
     .post(async (req, res) => {
@@ -38,38 +42,59 @@ module.exports = function (app) {
     })
 
     .put(async (req, res) => {
-      // const { project } = req.params;
+      try {
+        const { project } = req.params;
 
-      // if (!req.body._id) {
-      //   return res.status(200).json({ error: "missing _id" });
-      // }
-      // if (!req.body) {
-      //   return res
-      //     .status(200)
-      //     .json({ error: "no update field(s) sent", _id: _id });
-      // }
-      // const issue = await Issue.findOneAndUpdate({ _id }, req.body, {
-      //   new: true,
-      //   runValidation: true,
-      // });
-      // if (!issue) {
-      //   return res.status(200).json({ error: "could not update", _id: _id });
-      // }
+        if (!req.body._id) {
+          return res.status(200).json({ error: "missing _id" });
+        }
 
-      // return res.status(200).json({ result: "successfully updated", _id: _id });
+        if (
+          !req.body.assigned_to &&
+          !req.body.status_text &&
+          !req.body.open &&
+          !req.body.issue_title &&
+          !req.body.issue_text &&
+          !req.body.created_by
+        ) {
+          return res
+            .status(200)
+            .json({ error: "no update field(s) sent", _id: req.body._id });
+        }
+        const issue = await Issue.findByIdAndUpdate(req.body._id, req.body, {
+          new: true,
+        });
+
+        if (!issue) {
+          return res
+            .status(200)
+            .json({ error: "could not update", _id: req.body._id });
+        }
+        return res
+          .status(200)
+          .json({ result: "successfully updated", _id: req.body._id });
+      } catch (error) {
+        console.log(error);
+      }
     })
 
     .delete(async (req, res) => {
-      // const { project } = req.params;
-      // const { _id } = req.body;
+      try {
+        const { project } = req.params;
+        const { _id } = req.body;
 
-      // if (!_id) {
-      //   return res.status(200).json({ error: "missing _id" });
-      // }
-      // const deleteIssue = await Issue.findOneAndDelete({ _id });
-      // if (!deleteIssue) {
-      //   return res.status(200).json({ error: "could not delete", _id: _id });
-      // }
-      // return res.status(200).json({ result: "successfully deleted", _id: _id });
+        if (!_id) {
+          return res.status(200).json({ error: "missing _id" });
+        }
+        const deleteIssue = await Issue.findByIdAndDelete({ _id });
+        if (!deleteIssue) {
+          return res.status(200).json({ error: "could not delete", _id: _id });
+        }
+        return res
+          .status(200)
+          .json({ result: "successfully deleted", _id: _id });
+      } catch (error) {
+        console.log(error);
+      }
     });
 };
